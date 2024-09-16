@@ -2,6 +2,7 @@ package org.example.chat.client;
 
 import java.io.*;
 import java.net.Socket;
+import java.util.Scanner;
 
 public class Client {
 
@@ -22,6 +23,40 @@ public class Client {
         }
     }
 
+    public void listenForMessage(){
+        new Thread(new Runnable() {
+            @Override
+            public void run() {
+                String message;
+                try {
+                    while (socket.isConnected()) {
+                        message = bufferedReader.readLine();
+                        System.out.println(message);
+                    }
+                }catch(IOException e){
+                    closeEverything(socket, bufferedWriter, bufferedReader);
+                }
+            }
+        }).start();
+    }
+
+    public void sendMessage(){
+        try {
+            bufferedWriter.write(name);
+            bufferedWriter.newLine();
+            bufferedWriter.flush();
+
+            Scanner scan = new Scanner(System.in);
+            while (socket.isConnected()) {
+                String message = scan.nextLine();
+                bufferedWriter.write(name + ": " + message);
+                bufferedWriter.newLine();
+                bufferedWriter.flush();
+            }
+        }catch (IOException e){
+            closeEverything(socket, bufferedWriter, bufferedReader);
+        }
+    }
     private void closeEverything(Socket socket, BufferedWriter bufferedWriter, BufferedReader bufferedReader){
         try {
             if (bufferedWriter != null) {
