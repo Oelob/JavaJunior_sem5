@@ -1,8 +1,10 @@
 package org.example.chat.server;
 
+import java.awt.*;
 import java.io.*;
 import java.net.Socket;
 import java.util.ArrayList;
+import java.util.List;
 
 public class ClientManager  implements Runnable{
     private final Socket socket;
@@ -11,7 +13,7 @@ public class ClientManager  implements Runnable{
     private String name;
 
 
-    public static final ArrayList<ClientManager> clients = new ArrayList<>();
+    public static ArrayList<ClientManager> clients = new ArrayList<>();
 
     public ClientManager(Socket socket) {
         this.socket = socket;
@@ -40,14 +42,43 @@ public class ClientManager  implements Runnable{
                     closeEverything(socket, bufferedWriter, bufferedReader);
                     break;
                 }
-                broadcastMessage(messageFromClient);
+                sendMsg(messageFromClient);
             }catch (IOException e){
                 closeEverything(socket, bufferedWriter, bufferedReader);
                 break;
             }
         }
     }
+    private void sendMsg(String msg){
+        StringBuilder nameClient = new StringBuilder();
+        String[] arrayMsg = msg.split(" ");
+        String nameUser = arrayMsg[1];
+        String[] arrayNameUser = nameUser.split("");
 
+        if(arrayNameUser[0].equals("@")){
+            for (int i = 1; i < arrayNameUser.length; i++) {
+                nameClient.append(arrayNameUser[i]);
+            }
+            StringBuilder newMsg = new StringBuilder(arrayMsg[0] + " ");
+            for (int i = 2; i < arrayMsg.length; i++) {
+                newMsg.append(arrayMsg[i]);
+                newMsg.append(" ");
+            }
+                for (ClientManager client:clients) {
+                    try {
+                        if (nameClient.toString().equals(client.name)){
+                            client.bufferedWriter.write(newMsg.toString());
+                            client.bufferedWriter.newLine();
+                            client.bufferedWriter.flush();
+                        }
+                    }catch (IOException e){
+                        closeEverything(socket, bufferedWriter, bufferedReader);
+                    }
+                }
+        }else{
+            broadcastMessage(msg);
+        }
+    }
     private void broadcastMessage(String message){
         for (ClientManager client : clients) {
             try {
